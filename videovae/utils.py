@@ -1,6 +1,40 @@
 import torch
 import copy
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def extend_batch(batch, dataloader, batch_size):
+    """
+    If the batch size is less than batch_size, extends it with
+    data from the dataloader until it reaches the required size.
+    Here batch is a tensor.
+    Returns the extended batch.
+    """
+    while batch.shape[0] != batch_size:
+        dataloader_iterator = iter(dataloader)
+        nw_batch,_ = dict.values(next(dataloader_iterator))
+        nw_batch = nw_batch.to(DEVICE)
+        if nw_batch.shape[0] + batch.shape[0] > batch_size:
+            nw_batch = nw_batch[:batch_size - batch.shape[0]]
+        batch = torch.cat([batch, nw_batch], 0)
+    return batch
+def extend_motion(motion, dataloader, batch_size):
+    """
+    If the batch size is less than batch_size, extends it with
+    data from the dataloader until it reaches the required size.
+    Here batch is a tensor.
+    Returns the extended batch.
+    """
+    while motion.shape[0] != batch_size:
+        dataloader_iterator = iter(dataloader)
+        _, nw_motion = dict.values(next(dataloader_iterator))
+        nw_motion = nw_motion.permute(0,2,1).to(DEVICE)
+
+        if nw_motion.shape[0] + motion.shape[0] > batch_size:
+            nw_motion = nw_motion[:batch_size - motion.shape[0]]
+        motion = torch.cat([motion, nw_motion], 0)
+    return motion
+
 def gray2color(video):
     '''The input video size: [16, 9, 64, 64]'''
     video = torch.argmax(video, 1).unsqueeze(1).cpu().numpy() *0.1*255
