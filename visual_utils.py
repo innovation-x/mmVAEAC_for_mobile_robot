@@ -17,44 +17,37 @@ def save_video(name, video, fps):
     write_video(name, vid_arr, fps=fps)
 
 
-_SEMANTIC_PALETTE = np.array(
-    [
-        (30, 30, 30),
-        (220, 70, 70),
-        (70, 180, 90),
-        (80, 120, 230),
-        (240, 190, 60),
-        (180, 90, 200),
-        (70, 210, 210),
-        (235, 235, 235),
-        (150, 150, 150),
-    ],
-    dtype=np.uint8,
-)
-
-
 def _as_numpy(value):
     if isinstance(value, torch.Tensor):
         return value.detach().cpu().numpy()
     return np.asarray(value)
 
 
-def _as_rgb_frames(video):
-    """Convert ``[T, H, W]`` labels or ``[T, H, W, C]`` frames to RGB."""
+def _as_gray_frames(video):
+    """Convert labels or image frames to ``[T, H, W]`` uint8 grayscale frames."""
     frames = _as_numpy(video)
+    is_label_map = frames.ndim == 3
     if frames.ndim == 4 and frames.shape[-1] > 3:
         frames = np.argmax(frames, axis=-1)
+        is_label_map = True
 
     if frames.ndim == 3:
-        labels = np.rint(frames).astype(np.int64)
-        return _SEMANTIC_PALETTE[np.clip(labels, 0, len(_SEMANTIC_PALETTE) - 1)]
+        if is_label_map:
+            # The model uses nine semantic channels. Keeping this fixed range
+            # makes origin and generated clips directly comparable.
+            return np.rint(np.clip(frames, 0, 8) * (255.0 / 8.0)).astype(np.uint8)
+        return np.rint(np.clip(frames, 0.0, 1.0) * 255.0).astype(np.uint8)
 
     if frames.ndim != 4:
         raise ValueError("video must have shape [T, H, W] or [T, H, W, C]")
 
     if frames.shape[-1] == 1:
-        frames = np.repeat(frames, 3, axis=-1)
-    elif frames.shape[-1] != 3:
+        frames = frames[..., 0]
+    elif frames.shape[-1] == 3:
+        frames = (
+            0.299 * frames[..., 0] + 0.587 * frames[..., 1] + 0.114 * frames[..., 2]
+        )
+    else:
         raise ValueError("video frames must have one, three, or one-hot channels")
 
     if np.issubdtype(frames.dtype, np.floating):
@@ -75,45 +68,35 @@ def _as_motion_sequence(motion, frame_count):
     return values.astype(np.float32)
 
 
-def save_motion_video(name, video, motion, fps=5, title="Motion"):
-    """Write an annotated video with a motion arrow below every frame.
+def save_motion_video(name, video, motion, fps=5, title=None):
+    """Write a grayscale video with a green motion arrow on every frame.
 
     Args:
         name: Output ``.mp4`` path.
-        video: Semantic labels ``[T, H, W]`` or RGB/one-hot frames
-            ``[T, H, W, C]``.
+        video: Semantic labels ``[T, H, W]`` or image/one-hot frames
+            ``[T, H, W, C]``. All frames are exported in grayscale.
         motion: Per-frame ``[linear_velocity, angular_velocity]`` values.
         fps: Output frame rate.
-        title: Prefix displayed in the bottom motion panel.
+        title: Retained for backwards compatibility; no text is drawn.
     """
-    frames = _as_rgb_frames(video)
+    frames = _as_gray_frames(video)
     motions = _as_motion_sequence(motion, len(frames))
-    _, height, width, _ = frames.shape
-    panel_height = max(48, height // 2)
+    _, height, width = frames.shape
     annotated_frames = []
 
     for frame, (linear_velocity, angular_velocity) in zip(frames, motions):
-        canvas = np.full((height + panel_height, width, 3), 18, dtype=np.uint8)
-        canvas[:height] = frame
-        cv2.line(canvas, (0, height), (width, height), (235, 235, 235), 1)
-
-        origin = (width // 2, height + panel_height - 9)
+        canvas = np.repeat(frame[..., np.newaxis], 3, axis=-1)
+        origin = (width // 2, height - 7)
         horizontal = int(np.clip(angular_velocity, -1.0, 1.0) * (width * 0.32))
-        vertical = max(8, int(np.clip(abs(linear_velocity), 0.0, 1.0) * (panel_height * 0.65)))
-        endpoint = (origin[0] + horizontal, origin[1] - vertical)
-        cv2.arrowedLine(canvas, origin, endpoint, (80, 220, 255), 2, tipLength=0.28)
-        cv2.circle(canvas, origin, 2, (255, 255, 255), -1)
-        label = f"{title}  v={linear_velocity:+.2f}  w={angular_velocity:+.2f}"
-        cv2.putText(
-            canvas,
-            label,
-            (4, height + 16),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.34,
-            (255, 255, 255),
-            1,
-            cv2.LINE_AA,
+        vertical = int(np.clip(linear_velocity, -1.0, 1.0) * (height * 0.45))
+        endpoint = (
+            int(np.clip(origin[0] + horizontal, 3, width - 4)),
+            int(np.clip(origin[1] - vertical, 3, height - 4)),
         )
+        if endpoint == origin:
+            endpoint = (origin[0], max(3, origin[1] - 8))
+        cv2.arrowedLine(canvas, origin, endpoint, (0, 255, 0), 2, tipLength=0.28)
+        cv2.circle(canvas, origin, 2, (0, 255, 0), -1)
         annotated_frames.append(canvas)
 
     write_video(name, torch.from_numpy(np.stack(annotated_frames)), fps=fps)
