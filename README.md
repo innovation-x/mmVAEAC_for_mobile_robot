@@ -9,11 +9,23 @@ scene and/or a partial motion sequence, it generates plausible robot motion and
 supports experiments on the relationship between generated motion and presence
 intensity.
 
+## Qualitative example
+
+The input sequence and the model-generated sequence are shown below.  The
+green arrow in each frame visualizes the corresponding robot motion.
+
 <p align="center">
-  <a href="https://github.com/innovation-x/mmVAEAC_for_mobile_robot/blob/main/origin.mp4">Input scene</a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/innovation-x/mmVAEAC_for_mobile_robot/blob/main/demo.mp4">Generated-motion demo</a>
+  <img src="assets/origin.gif" alt="Original input video with ground-truth motion" width="320">
+  <img src="assets/demo.gif" alt="Generated video with predicted motion" width="320">
 </p>
+<p align="center">
+  <em>Original input / ground-truth motion</em>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <em>Generated video / predicted motion</em>
+</p>
+
+The source MP4 files are also available as [origin.mp4](origin.mp4) and
+[demo.mp4](demo.mp4).
 
 ## Repository layout
 
