@@ -1,0 +1,6 @@
+# CPU-only environment for machines without a compatible NVIDIA driver.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==1.10.1+cpu
+torchvision==0.11.2+cpu
+-r requirements.txt

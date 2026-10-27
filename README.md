@@ -47,19 +47,16 @@ conda activate mmvaeac-mobile-robot
 Alternatively, create a virtual environment and install the pinned packages:
 
 ```bash
-python3.8 -m venv .venv
-source .venv/bin/activate
+python3.8 -m venv mmvaeac
+source mmvaeac/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements-cu113.txt
 ```
 
-For a CPU-only setup, install matching CPU PyTorch wheels first, then install
-the remaining packages without resolving dependencies:
+For a CPU-only setup, use the matching CPU PyTorch wheels:
 
 ```bash
-pip install torch==1.10.1+cpu torchvision==0.11.2+cpu \
-  --extra-index-url https://download.pytorch.org/whl/cpu
-pip install -r requirements.txt
+pip install -r requirements-cpu.txt
 ```
 
 ## Dataset format
