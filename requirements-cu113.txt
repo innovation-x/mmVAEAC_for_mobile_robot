@@ -1,0 +1,6 @@
+# CUDA 11.3 environment used for the original experiments (Python 3.8).
+--extra-index-url https://download.pytorch.org/whl/cu113
+
+torch==1.10.1+cu113
+torchvision==0.11.2+cu113
+-r requirements.txt

@@ -12,7 +12,8 @@ def extend_batch(batch, dataloader, batch_size):
     """
     while batch.shape[0] != batch_size:
         dataloader_iterator = iter(dataloader)
-        nw_batch,_ = dict.values(next(dataloader_iterator))
+        x,_,_ = next(dataloader_iterator)
+        nw_batch,_ = dict.values(x)
         nw_batch = nw_batch.to(DEVICE)
         if nw_batch.shape[0] + batch.shape[0] > batch_size:
             nw_batch = nw_batch[:batch_size - batch.shape[0]]
@@ -27,7 +28,8 @@ def extend_motion(motion, dataloader, batch_size):
     """
     while motion.shape[0] != batch_size:
         dataloader_iterator = iter(dataloader)
-        _, nw_motion = dict.values(next(dataloader_iterator))
+        x,_,_ = next(dataloader_iterator)
+        _, nw_motion = dict.values(x)
         nw_motion = nw_motion.permute(0,2,1).to(DEVICE)
 
         if nw_motion.shape[0] + motion.shape[0] > batch_size:

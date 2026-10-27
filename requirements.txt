@@ -1,0 +1,13 @@
+# Shared Python dependencies. Install either requirements-cu113.txt or CPU
+# PyTorch followed by this file; see the README.
+numpy==1.24.4
+opencv-python==4.11.0.86
+av==12.3.0
+h5py==3.11.0
+joblib==1.4.2
+matplotlib==3.7.5
+pytorch-lightning==2.4.0
+tensorboard==2.14.0
+tqdm==4.67.1
+wandb==0.19.8
+seaborn==0.13.2
